@@ -9,16 +9,7 @@
     <script src="/static/jquery/jquery.min.js"></script>
     <script src="/static/jquery/autosize/jquery.autosize-min.js"></script>
     <script src="/static/bootstrap/js/bootstrap.min.js"></script>
-    <script src="/static/js/editor.js"></script>
-    <script type="application/javascript">
-      initEditor = function initEditor() {
-      <% if (articleId !== null) { %>
-      editor.setArticleId("<%= articleId %>");
-      <% } %>
-      editor.fetchSaved();
-      editor.updateView();
-      }
-    </script>
+    <script src="/static/js/index.js"></script>
   </head>
   <body>
     <div class="navbar navbar-inverse navbar-fixed-top">
@@ -34,14 +25,19 @@
         </div>
       </div>
     </div>
-    <div class="container container-fluid">
-      <div class="row-fluid">
-        <div class="span6">
-          <textarea id="input-md"></textarea>
-        </div>
-        <div class="span6 preview-container"><div id="result-html"></div></div>
+    <div class="container">
+      <h1>Mark to page</h1>
+      <p>
+        Create a note for anything you need. It is simple to organize you
+        information with markdown. Try it now.
+      </p>
+      <p>
+        <a href="/new" class="btn btn-primary">Make a note</a>
+      </p>
+      <h2>Or edit existed note</h2>
+      <div id="exist-note-container">
+        
       </div>
-    </div>
     </div>
   </body>
 </html>

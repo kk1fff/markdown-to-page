@@ -1,3 +1,5 @@
+var initEditor = null, editor, editorUpdater;
+
 var Editor = function() {
 };
 
@@ -12,9 +14,12 @@ Editor.prototype = {
   // Expected signature is function(error, content).
   viewUpdater: null,
 
+  // Callback function the used for setting source data. Signature function(err, src).
+  sourceUpdater: null,
+
   _waitingForMarkdownData: false,
 
-  _currentId: -1,
+  _currentId: "",
 
   update: function() {
     if (!this.markdownGetter) {
@@ -31,11 +36,13 @@ Editor.prototype = {
 
   _gotMarkdown: function(err, content) {
     var url;
-    if (this._currentId == -1) {
+    if (this._currentId == "") {
       url = "/api/insert";
     } else {
       url = "/api/file/" + this._currentId + "/update";
     }
+
+    console.log("Updating: currentId: " + this._currentId + " url: " + url);
 
     this._waitingForMarkdownData = false;
     $.post(url, {
@@ -44,7 +51,7 @@ Editor.prototype = {
   },
 
   _updatedMarkdown: function(data) {
-    if (this._currentId == -1) {
+    if (this._currentId == "") {
       // Update id if needed.
       this._currentId = data.payload.id;
     }
@@ -54,7 +61,7 @@ Editor.prototype = {
   },
 
   updateView: function() {
-    if (this._currentId == -1) {
+    if (this._currentId == "") {
       // can't update view for a article that is not stored.
       return;
     }
@@ -66,6 +73,24 @@ Editor.prototype = {
     if (this.viewUpdater) {
       this.viewUpdater(null, data.payload.html);
     }
+  },
+
+  fetchSaved: function() {
+    if (this._currentId == "") {
+      return;
+    }
+
+    $.get('/api/file/' + this._currentId + '/source', this._gotSource.bind(this), 'json');
+  },
+
+  _gotSource: function(data) {
+    if (this.sourceUpdater) {
+      this.sourceUpdater(null, data.payload.source);
+    }
+  },
+
+  setArticleId: function(id) {
+    this._currentId = id;
   }
 };
 
@@ -96,7 +121,32 @@ AutoUpdater.prototype = {
   }
 };
 
-var editor, editorUpdater;
+function toPixel(input) {
+  var m;
+  if (typeof input == 'string') {
+    if (m = input.match(/^([0-9]+)px$/)) {
+      return parseInt(m[1].replace(/^0+/, ''));
+    }
+  }
+}
+
+function initExtentToBottomSize() {
+  function extendToButtom(element) {
+    var height = window.innerHeight - element.position().top;
+    if (height <= 0) {
+      element.hide();
+    } else {
+      element.show();
+      element.css('height', height);
+    }
+  }
+  function updateContainerSize() {
+    extendToButtom($('.preview-container'));
+    extendToButtom($('#input-md'));
+  }
+  $(window).bind('resize', updateContainerSize);
+  $(window).bind('load', updateContainerSize);
+}
 
 $(document).ready(function() {
   editor = new Editor();
@@ -109,14 +159,25 @@ $(document).ready(function() {
     $("#result-html").html(content);
   };
 
+  editor.sourceUpdater = function(err, src) {
+    $("#input-md").val(src); //.trigger('autosize.resize');
+  };
+
   $('#update-input').click(function() {
     editor.update();
   });
 
-  $("#input-md").autosize();
+  // $("#input-md").autosize();
 
   editorUpdater = new AutoUpdater($("#input-md"));
   editorUpdater.onUpdate = function() {
     editor.update();
   };
+
+  // This function is expected to be implemented in html file.
+  if (initEditor) {
+    initEditor();
+  }
+
+  initExtentToBottomSize();
 });
